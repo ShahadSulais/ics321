@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Soccer@KFUPM</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      color: #facc15;
+      margin-bottom: 2rem;
+    }
+    .logout-container {
+      text-align: right;
+      margin-bottom: 1rem;
+    }
+    .logout-container button {
+      background-color: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    section {
+      background-color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    section h2 {
+      color: #38bdf8;
+      margin-bottom: 1rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input, button {
+      padding: 0.75rem;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #facc15;
+      color: #1e293b;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #eab308;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logout-container">
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <h1>Admin Dashboard - Soccer@KFUPM</h1>
+
+  <!-- Add Tournament -->
+  <section>
+    <h2>Add New Tournament</h2>
+    <form id="addTournamentForm">
+      <input type="text" id="tName" placeholder="Tournament Name" required>
+      <input type="date" id="tStart" required>
+      <input type="date" id="tEnd" required>
+      <button type="submit">Add Tournament</button>
+    </form>
+  </section>
+
+  <!-- Add Team -->
+  <section>
+    <h2>Add Team to Tournament</h2>
+    <form id="addTeamForm">
+      <input type="number" id="teamId" placeholder="Team ID" required>
+      <input type="number" id="tournamentIdForTeam" placeholder="Tournament ID" required>
+      <input type="text" id="teamGroup" placeholder="Group (e.g., A, B)" required>
+      <button type="submit">Add Team</button>
+    </form>
+  </section>
+
+  <!-- Select Captain -->
+  <section>
+    <h2>Select Captain</h2>
+    <form id="selectCaptainForm">
+      <input type="number" id="matchNo" placeholder="Match Number" required>
+      <input type="number" id="teamIdForCaptain" placeholder="Team ID" required>
+      <input type="number" id="playerIdCaptain" placeholder="Player ID" required>
+      <button type="submit">Select Captain</button>
+    </form>
+  </section>
+
+  <!-- Approve Player -->
+  <section>
+    <h2>Approve Player to Join Team</h2>
+    <form id="approvePlayerForm">
+      <input type="number" id="playerId" placeholder="Player ID" required>
+      <input type="number" id="teamIdForPlayer" placeholder="Team ID" required>
+      <input type="number" id="tournamentIdForPlayer" placeholder="Tournament ID" required>
+      <button type="submit">Approve Player</button>
+    </form>
+  </section>
+
+  <!-- Delete Tournament -->
+  <section>
+    <h2>Delete Tournament</h2>
+    <form id="deleteTournamentForm">
+      <input type="number" id="tournamentId" placeholder="Tournament ID" required>
+      <button type="submit" style="background-color: #ef4444;">Delete Tournament</button>
+    </form>
+  </section>
+
+  <!-- Scripts for Handling Forms -->
+  <script>
+    function logout() {
+      window.location.href = "index.html";
+    }
+
+    // Add Tournament
+    document.getElementById('addTournamentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const tName = document.getElementById('tName').value;
+      const tStart = document.getElementById('tStart').value;
+      const tEnd = document.getElementById('tEnd').value;
+
+      fetch('/api/add-tournament', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tName, tStart, tEnd })
+      })
+      .then(response => response.text())
+      .then(alert)
+      .catch(error => alert('Error adding tournament'));
+    });
+
+    // Add Team
+    document.getElementById('addTeamForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const teamId = document.getElementById('teamId').value;
+      const tournamentIdForTeam = document.getElementById('tournamentIdForTeam').value;
+      const teamGroup = document.getElementById('teamGroup').value;
+
+      fetch('/api/add-team', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, tournamentIdForTeam, teamGroup })
+      })
+      .then(response => response.text())
+      .then(alert)
+      .catch(error => alert('Error adding team'));
+    });
+
+    // Select Captain
+    document.getElementById('selectCaptainForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const matchNo = document.getElementById('matchNo').value;
+      const teamIdForCaptain = document.getElementById('teamIdForCaptain').value;
+      const playerIdCaptain = document.getElementById('playerIdCaptain').value;
+
+      fetch('/api/select-captain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchNo, teamIdForCaptain, playerIdCaptain })
+      })
+      .then(response => response.text())
+      .then(alert)
+      .catch(error => alert('Error selecting captain'));
+    });
+
+    // Approve Player
+    document.getElementById('approvePlayerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const playerId = document.getElementById('playerId').value;
+      const teamIdForPlayer = document.getElementById('teamIdForPlayer').value;
+      const tournamentIdForPlayer = document.getElementById('tournamentIdForPlayer').value;
+
+      fetch('/api/approve-player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, teamIdForPlayer, tournamentIdForPlayer })
+      })
+      .then(response => response.text())
+      .then(alert)
+      .catch(error => alert('Error approving player'));
+    });
+
+    // Delete Tournament
+    document.getElementById('deleteTournamentForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const tournamentId = document.getElementById('tournamentId').value;
+
+      fetch(`/api/delete-tournament/${tournamentId}`, {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(alert)
+      .catch(error => alert('Error deleting tournament'));
+    });
+  </script>
+
+</body>
+</html>

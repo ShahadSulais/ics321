@@ -1,0 +1,102 @@
+<!-- public/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Soccer@KFUPM - Login</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background-color: #1e293b;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+      width: 320px;
+    }
+
+    h1 {
+      color: #facc15;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      color: white;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      padding: 0.6rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    input, select {
+      background-color: #f1f5f9;
+    }
+
+    button {
+      background-color: #facc15;
+      color: #1e293b;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #eab308;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Login to Soccer@KFUPM</h1>
+    <form id="loginForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" required>
+
+      <label for="role">Role:</label>
+      <select id="role" required>
+        <option value="admin">Admin</option>
+        <option value="guest">Guest</option>
+      </select>
+
+      <button type="submit">Login</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const role = document.getElementById('role').value;
+      if (role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'guest.html';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Team Members - Soccer@KFUPM</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f172a;
+      color: white;
+    }
+    header {
+      background-color: #1e293b;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #334155;
+    }
+    nav {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background-color: #334155;
+    }
+    main {
+      padding: 2rem;
+    }
+    h2 {
+      color: #38bdf8;
+      margin-bottom: 1rem;
+    }
+    form {
+      margin-bottom: 2rem;
+    }
+    select, button {
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: none;
+      margin-right: 1rem;
+    }
+    button {
+      background-color: #38bdf8;
+      color: #1e293b;
+      cursor: pointer;
+    }
+    .section {
+      margin-top: 2rem;
+    }
+    .section h3 {
+      margin-bottom: 0.5rem;
+      color: #facc15;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.3rem;
+    }
+    .member {
+      padding: 0.5rem 1rem;
+      background-color: #1e293b;
+      margin-bottom: 0.3rem;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: space-between;
+    }
+    #teamHeader {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    #favoriteStar {
+      font-size: 1.5rem;
+      color: #facc15;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Soccer@KFUPM</h1>
+  <nav>
+    <a href="guest.html">Home</a>
+    <a href="match-results.html">Match Results</a>
+    <a href="top-scorer.html">Top Scorer</a>
+    <a href="red-cards.html">Red Cards</a>
+    <a href="team-members.html">Team Members</a>
+    <a href="favorites.html">Favorites</a>
+    <a href="standings.html">Standings</a>
+    <a href="index.html">Logout</a>
+  </nav>
+</header>
+
+<main>
+  <h2>Team Members</h2>
+  <form id="teamForm">
+    <select id="teamName" required></select>
+    <button type="submit">View Members</button>
+  </form>
+
+  <div id="teamHeader">
+    <h2 id="teamTitle" style="margin: 0;"></h2>
+    <span id="favoriteStar">&#9734;</span>
+  </div>
+
+  <div id="membersOutput"></div>
+</main>
+
+<script>
+async function loadTeams() {
+  const select = document.getElementById('teamName');
+  try {
+    const res = await fetch('/api/teams');
+    const data = await res.json();
+    select.innerHTML = '<option value="">Select Team</option>';
+    data.forEach(t => {
+      const option = document.createElement('option');
+      option.value = t.team_name;
+      option.textContent = t.team_name;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    select.innerHTML = '<option value="">Failed to load teams</option>';
+  }
+}
+
+async function loadTeamMembers(team) {
+  const container = document.getElementById('membersOutput');
+  try {
+    const res = await fetch(`/api/team-members/${encodeURIComponent(team)}`);
+    const data = await res.json();
+    let html = '';
+
+    html += `<div class="section"><h3>Coach</h3><div class="member"><span>${data.coach || 'Not Assigned'}</span></div></div>`;
+    html += `<div class="section"><h3>Manager</h3><div class="member"><span>${data.manager || 'Not Assigned'}</span></div></div>`;
+
+    html += `<div class="section"><h3>Full Roster</h3>`;
+    data.players.forEach(p => {
+      html += `<div class="member">
+        <span>#${p.number}</span>
+        <span>${p.name} - ${p.position}${p.isCaptain ? ' 🏅 (Captain)' : ''}</span>
+      </div>`;
+    });
+    html += `</div>`;
+
+    container.innerHTML = html;
+  } catch (err) {
+    console.error('❌ Error loading members:', err);
+    container.innerHTML = '<p style="color:red">Failed to load members.</p>';
+  }
+}
+
+document.getElementById('teamForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const team = document.getElementById('teamName').value;
+  document.getElementById('teamHeader').style.display = 'flex';
+  document.getElementById('teamTitle').textContent = team;
+
+  const star = document.getElementById('favoriteStar');
+  const favKey = `fav_${team}`;
+  star.innerHTML = localStorage.getItem(favKey) === 'true' ? '&#9733;' : '&#9734;';
+  star.onclick = () => {
+    const curr = localStorage.getItem(favKey) === 'true';
+    localStorage.setItem(favKey, !curr);
+    star.innerHTML = !curr ? '&#9733;' : '&#9734;';
+  };
+
+  loadTeamMembers(team);
+});
+
+loadTeams();
+</script>
+</body>
+</html>
