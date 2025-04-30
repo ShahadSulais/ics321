@@ -42,7 +42,7 @@
       font-weight: bold;
     }
 
-    input, select, button {
+    input, button {
       padding: 0.6rem;
       margin-bottom: 1rem;
       border: none;
@@ -50,7 +50,7 @@
       font-size: 1rem;
     }
 
-    input, select {
+    input {
       background-color: #f1f5f9;
     }
 
@@ -65,36 +65,73 @@
     button:hover {
       background-color: #eab308;
     }
+
+    .error {
+      color: red;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .show-password {
+      font-size: 0.9rem;
+      color: white;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="login-container">
     <h1>Login to Soccer@KFUPM</h1>
     <form id="loginForm">
-      <label for="username">Username:</label>
-      <input type="text" id="username" required>
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
 
       <label for="password">Password:</label>
       <input type="password" id="password" required>
 
-      <label for="role">Role:</label>
-      <select id="role" required>
-        <option value="admin">Admin</option>
-        <option value="guest">Guest</option>
-      </select>
+      <label class="show-password">
+        <input type="checkbox" onclick="togglePassword()"> Show Password
+      </label>
 
       <button type="submit">Login</button>
     </form>
+    <div class="error" id="errorMsg"></div>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    function togglePassword() {
+      const passwordInput = document.getElementById("password");
+      passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const role = document.getElementById('role').value;
-      if (role === 'admin') {
-        window.location.href = 'admin.html';
-      } else {
-        window.location.href = 'guest.html';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorMsg.textContent = data || 'Login failed';
+        } else {
+          // Redirect based on role
+          if (data.isAdmin) {
+            window.location.href = 'admin.html';
+          } else {
+            window.location.href = 'guest.html';
+          }
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Server error. Try again.';
       }
     });
   </script>

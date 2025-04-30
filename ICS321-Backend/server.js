@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const db = require('./db');
 const path = require('path');
 const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+
 
 const PORT = 3000;
 
@@ -472,6 +474,32 @@ app.get('/api/team-members/:teamName', (req, res) => {
     }));
 
     res.json({ coach: coachName, manager: managerName, players });
+  });
+});
+
+
+
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+
+  console.log('📥 Login request received for:', email);
+
+  const sql = 'SELECT * FROM users WHERE email = ? AND password = ?';
+
+  db.query(sql, [email, password], (err, results) => {
+    if (err) {
+      console.error('❌ Database error:', err);
+      return res.status(500).send('Database error');
+    }
+
+    if (results.length === 0) {
+      console.log('❌ Invalid email or password');
+      return res.status(401).send('Invalid credentials');
+    }
+
+    const user = results[0];
+    console.log('✅ Login successful');
+    res.json({ message: 'Login successful', isAdmin: user.is_admin === 1 });
   });
 });
 
