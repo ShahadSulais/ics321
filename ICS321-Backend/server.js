@@ -12,7 +12,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-
 // 1. Add New Tournament
 app.post('/api/add-tournament', (req, res) => {
   const { tName, tStart, tEnd } = req.body;
@@ -96,7 +95,6 @@ app.delete('/api/delete-tournament/:tournamentId', (req, res) => {
     res.send('Tournament deleted successfully!');
   });
 });
-
 
 // 6. Get Match Results With Details
 app.get('/api/match-results/:tournamentName', (req, res) => {
@@ -224,7 +222,6 @@ app.get('/api/top-scorers/:tournamentName', (req, res) => {
 });
 
 
-
 // 9. Get Red Cards by Team
 app.get('/api/red-cards/:teamName', (req, res) => {
   const { teamName } = req.params;
@@ -246,7 +243,6 @@ app.get('/api/red-cards/:teamName', (req, res) => {
   });
 });
 
-// 10. Get Team Members (Coach, Manager, Players)
 app.get('/api/team-members/:teamName', (req, res) => {
   const { teamName } = req.params;
 
@@ -257,37 +253,41 @@ app.get('/api/team-members/:teamName', (req, res) => {
       pp.position_desc,
       IF(mc.player_captain = pl.player_id, 'Y', 'N') AS is_captain,
       t.team_name,
-      coach_person.name AS coach_name,
-      manager_person.name AS manager_name
+      (SELECT p1.name
+       FROM match_support ms1
+       JOIN match_played mp1 ON ms1.match_no = mp1.match_no
+       JOIN person p1 ON ms1.support_id = p1.kfupm_id
+       WHERE ms1.support_type = 'CH'
+         AND (mp1.team_id1 = t.team_id OR mp1.team_id2 = t.team_id)
+       LIMIT 1) AS coach_name,
+      (SELECT p2.name
+       FROM match_support ms2
+       JOIN match_played mp2 ON ms2.match_no = mp2.match_no
+       JOIN person p2 ON ms2.support_id = p2.kfupm_id
+       WHERE ms2.support_type = 'MG'
+         AND (mp2.team_id1 = t.team_id OR mp2.team_id2 = t.team_id)
+       LIMIT 1) AS manager_name
     FROM team_player tp
     JOIN team t ON tp.team_id = t.team_id
     JOIN player pl ON tp.player_id = pl.player_id
     JOIN person p ON pl.player_id = p.kfupm_id
     JOIN playing_position pp ON pl.position_to_play = pp.position_id
-    LEFT JOIN match_captain mc ON tp.team_id = mc.team_id
-    LEFT JOIN match_support ms_coach ON ms_coach.support_type = 'CH' AND ms_coach.match_no IN (
-      SELECT match_no FROM match_played WHERE team_id1 = tp.team_id OR team_id2 = tp.team_id LIMIT 1
-    )
-    LEFT JOIN person coach_person ON ms_coach.support_id = coach_person.kfupm_id
-    LEFT JOIN match_support ms_manager ON ms_manager.support_type = 'MG' AND ms_manager.match_no IN (
-      SELECT match_no FROM match_played WHERE team_id1 = tp.team_id OR team_id2 = tp.team_id LIMIT 1
-    )
-    LEFT JOIN person manager_person ON ms_manager.support_id = manager_person.kfupm_id
+    LEFT JOIN match_captain mc ON tp.player_id = mc.player_captain AND tp.team_id = mc.team_id
     WHERE t.team_name = ?
-    GROUP BY pl.player_id
   `;
 
   db.query(sql, [teamName], (err, results) => {
-    if (err) return res.status(500).send('Error fetching team members');
+    if (err) {
+      console.error('❌ Error fetching team members:', err);
+      return res.status(500).send('Error fetching team members');
+    }
 
     let coachName = 'Not Assigned';
     let managerName = 'Not Assigned';
 
     if (results.length) {
-      const coachRow = results.find(r => r.coach_name);
-      const managerRow = results.find(r => r.manager_name);
-      if (coachRow) coachName = coachRow.coach_name;
-      if (managerRow) managerName = managerRow.manager_name;
+      coachName = results[0].coach_name || 'Not Assigned';
+      managerName = results[0].manager_name || 'Not Assigned';
     }
 
     const players = results.map(row => ({
@@ -303,7 +303,63 @@ app.get('/api/team-members/:teamName', (req, res) => {
 
 
 
+app.get('/api/team-members/:teamName', (req, res) => {
+  const { teamName } = req.params;
 
+  const sql = `
+    SELECT 
+      p.name AS player_name,
+      pl.jersey_no,
+      pp.position_desc,
+      IF(mc.player_captain = pl.player_id, 'Y', 'N') AS is_captain,
+      t.team_name,
+      (SELECT p1.name
+       FROM match_support ms1
+       JOIN match_played mp1 ON ms1.match_no = mp1.match_no
+       JOIN person p1 ON ms1.support_id = p1.kfupm_id
+       WHERE ms1.support_type = 'CH'
+         AND (mp1.team_id1 = t.team_id OR mp1.team_id2 = t.team_id)
+       LIMIT 1) AS coach_name,
+      (SELECT p2.name
+       FROM match_support ms2
+       JOIN match_played mp2 ON ms2.match_no = mp2.match_no
+       JOIN person p2 ON ms2.support_id = p2.kfupm_id
+       WHERE ms2.support_type = 'MG'
+         AND (mp2.team_id1 = t.team_id OR mp2.team_id2 = t.team_id)
+       LIMIT 1) AS manager_name
+    FROM team_player tp
+    JOIN team t ON tp.team_id = t.team_id
+    JOIN player pl ON tp.player_id = pl.player_id
+    JOIN person p ON pl.player_id = p.kfupm_id
+    JOIN playing_position pp ON pl.position_to_play = pp.position_id
+    LEFT JOIN match_captain mc ON tp.player_id = mc.player_captain AND tp.team_id = mc.team_id
+    WHERE t.team_name = ?
+  `;
+
+  db.query(sql, [teamName], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching team members:', err);
+      return res.status(500).send('Error fetching team members');
+    }
+
+    let coachName = 'Not Assigned';
+    let managerName = 'Not Assigned';
+
+    if (results.length) {
+      coachName = results[0].coach_name || 'Not Assigned';
+      managerName = results[0].manager_name || 'Not Assigned';
+    }
+
+    const players = results.map(row => ({
+      name: row.player_name,
+      number: row.jersey_no,
+      position: row.position_desc,
+      isCaptain: row.is_captain === 'Y'
+    }));
+
+    res.json({ coach: coachName, manager: managerName, players });
+  });
+});
 
 // ✅ Get All Teams
 app.get('/api/teams', (req, res) => {
@@ -356,7 +412,6 @@ app.get('/api/standings/:tournamentName', (req, res) => {
     res.json(results);
   });
 });
-
 
 app.get('/api/team-members/:teamName', (req, res) => {
   const { teamName } = req.params;
@@ -422,8 +477,9 @@ app.get('/api/team-members/:teamName', (req, res) => {
 
 
 
-
 // ✅ Start the server
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
+
+
